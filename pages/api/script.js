@@ -1,10 +1,10 @@
-// pages/api/script.js — OpenRouter free models
+// pages/api/script.js — dùng openrouter/free (tự chọn model free đang hoạt động)
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const { topic } = req.body;
 
   const PROMPT = `You are a horror YouTube Shorts content creator for "MysteryCase".
-Respond ONLY with a valid JSON object. No markdown, no backticks, no explanation.
+Respond ONLY with a valid JSON object. No markdown, no backticks, no explanation, just raw JSON.
 {
   "title": "one shocking clickbait title under 60 chars",
   "script": "voiceover script 60-80 words, no stage directions, natural spoken sentences",
@@ -14,59 +14,43 @@ Rules:
 - Each imagePrompt: describe a unique horror scene, dark cinematic style, vertical portrait
 - Keep characters visually consistent across all prompts
 - Story set in USA, realistic, shocking twist ending
-- Output ONLY the JSON object
+- Output ONLY the JSON object, nothing else
 
 Topic: ${topic}`;
 
-  // Try multiple free models in order
-  const MODELS = [
-    "meta-llama/llama-4-maverick:free",
-    "meta-llama/llama-4-scout:free",
-    "deepseek/deepseek-chat-v3-0324:free",
-    "mistralai/mistral-7b-instruct:free",
-  ];
+  try {
+    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
+        "HTTP-Referer": "https://mysterycase.vercel.app",
+        "X-Title": "MysteryCase Video Tool",
+      },
+      body: JSON.stringify({
+        model: "openrouter/free", // auto-selects any available free model
+        messages: [{ role: "user", content: PROMPT }],
+        max_tokens: 1200,
+        temperature: 0.9,
+      }),
+    });
 
-  let lastError = "";
-  for (const model of MODELS) {
-    try {
-      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
-          "HTTP-Referer": "https://mysterycase.vercel.app",
-          "X-Title": "MysteryCase Video Tool",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: PROMPT }],
-          max_tokens: 1200,
-          temperature: 0.9,
-        }),
-      });
-
-      const data = await r.json();
-      if (!r.ok || data.error) {
-        lastError = data.error?.message || `Model ${model} failed`;
-        continue; // try next model
-      }
-
-      const text = data.choices?.[0]?.message?.content || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      // Extract JSON object from response
-      const match = clean.match(/\{[\s\S]*\}/);
-      if (!match) { lastError = `No JSON from ${model}`; continue; }
-      const parsed = JSON.parse(match[0]);
-      if (!parsed.title || !parsed.script || !Array.isArray(parsed.imagePrompts)) {
-        lastError = `Invalid JSON structure from ${model}`; continue;
-      }
-      // Success
-      return res.status(200).json(parsed);
-    } catch (e) {
-      lastError = e.message;
-      continue;
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      return res.status(r.status || 500).json({ error: data.error?.message || "OpenRouter error" });
     }
-  }
 
-  return res.status(500).json({ error: "All models failed. Last error: " + lastError });
+    const text = data.choices?.[0]?.message?.content || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (!match) return res.status(500).json({ error: "Model did not return valid JSON. Please try again." });
+
+    const parsed = JSON.parse(match[0]);
+    if (!parsed.title || !parsed.script || !Array.isArray(parsed.imagePrompts)) {
+      return res.status(500).json({ error: "Invalid JSON structure. Please try again." });
+    }
+    return res.status(200).json(parsed);
+  } catch (e) {
+    return res.status(500).json({ error: "Script error: " + e.message });
+  }
 }
