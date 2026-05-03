@@ -398,9 +398,14 @@ export default function MysteryVideoTool() {
           {/* Story + Script */}
           <div style={s.card}>
             <label style={s.label}>📝 STORY: {content.title}</label>
-            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.8, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #1a0000", marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: "#555", letterSpacing: 2, marginBottom: 6 }}>🎙️ VOICEOVER SCRIPT — ElevenLabs sẽ đọc đoạn này</div>
+            <div style={{ fontSize: 12, color: "#888", lineHeight: 1.9, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #2a0000", marginBottom: 10, fontFamily: "Arial", whiteSpace: "pre-wrap" }}>
               {content.script}
             </div>
+            <button onClick={() => navigator.clipboard.writeText(content.script)}
+              style={{ background: "#1a0000", border: "1px solid #330000", borderRadius: 4, padding: "5px 12px", color: "#ff3333", fontSize: 10, cursor: "pointer", letterSpacing: 1, marginBottom: 10 }}>
+              Copy Voiceover Script
+            </button>
             {content.characters && (
               <div style={{ fontSize: 11, color: "#444", lineHeight: 1.7, background: "#050505", borderRadius: 6, padding: 12, border: "1px solid #1a0000", fontFamily: "monospace" }}>
                 <span style={{ color: "#ff3333", fontSize: 10, letterSpacing: 2 }}>👤 CHARACTER GUIDE</span><br/>

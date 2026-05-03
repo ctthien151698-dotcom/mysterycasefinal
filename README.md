@@ -27,3 +27,12 @@ Vercel → Settings → Environment Variables:
 
 ### 4. Redeploy
 Deployments → "..." → Redeploy
+
+## Cần 3 API Keys (thêm Gemini cho ảnh đẹp hơn)
+| Key | Lấy ở đâu | Dùng cho |
+|-----|-----------|---------|
+| `OPENROUTER_API_KEY` | openrouter.ai → Keys | Script (free) |
+| `GEMINI_API_KEY` | aistudio.google.com → Get API Key | Ảnh Imagen 3 (cần billing) |
+| `ELEVENLABS_API_KEY` | elevenlabs.io → Profile | Voiceover (free tier) |
+
+> Nếu Gemini Imagen lỗi, tự động fallback sang Pollinations.ai (free, không cần key).
