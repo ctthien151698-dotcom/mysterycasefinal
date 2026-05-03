@@ -54,12 +54,12 @@ export default function MysteryVideoTool() {
   };
 
   // STEP 2: Image via Next.js API route → Gemini Imagen 3
-  const generateImage = async (prompt, index) => {
+  const generateImage = async (prompt, index, storyTitle, scriptLine) => {
     addLog(`🖼️ Generating image ${index + 1}/10...`, "info");
     const res = await fetch("/api/image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, index }),
+      body: JSON.stringify({ prompt, index, title: storyTitle, scriptLine }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Image ${index + 1} failed`);
@@ -248,10 +248,16 @@ export default function MysteryVideoTool() {
 
       setPhase("images");
       const generatedImgs = [];
+      // Split script into lines for speech bubbles per image
+      const scriptSentences = (c.script || "").split(/(?<=[.!?\u2014])\s+/).filter(Boolean);
+      const scriptLines = Array.from({length: 10}, (_, s) => {
+        const perImg = Math.ceil(scriptSentences.length / 10);
+        return scriptSentences.slice(s * perImg, (s + 1) * perImg).join(" ");
+      });
       for (let i = 0; i < c.imagePrompts.length; i += 2) {
         const batch = c.imagePrompts.slice(i, i + 2);
         let results;
-        try { results = await Promise.all(batch.map((p, j) => generateImage(p, i + j))); }
+        try { results = await Promise.all(batch.map((p, j) => generateImage(p, i + j, c.title, scriptLines[i + j]))); }
         catch (e) { failWith(`Image ${i + 1}–${Math.min(i + 2, c.imagePrompts.length)}`, e); return; }
         generatedImgs.push(...results);
         setImages([...generatedImgs]);
@@ -388,14 +394,73 @@ export default function MysteryVideoTool() {
         )}
 
         {/* Story preview */}
-        {content && (
+        {content && (<>
+          {/* Story + Script */}
           <div style={s.card}>
             <label style={s.label}>📝 STORY: {content.title}</label>
-            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.8, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #1a0000" }}>
+            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.8, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #1a0000", marginBottom: 10 }}>
               {content.script}
             </div>
+            {content.characters && (
+              <div style={{ fontSize: 11, color: "#444", lineHeight: 1.7, background: "#050505", borderRadius: 6, padding: 12, border: "1px solid #1a0000", fontFamily: "monospace" }}>
+                <span style={{ color: "#ff3333", fontSize: 10, letterSpacing: 2 }}>👤 CHARACTER GUIDE</span><br/>
+                {content.characters}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* YouTube Package */}
+          <div style={s.card}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg,transparent,#ff3333,transparent)" }} />
+            <label style={s.label}>📦 YOUTUBE PACKAGE</label>
+
+            {/* Titles */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: "#ff3333", letterSpacing: 2, marginBottom: 8 }}>🎯 TITLES (chọn 1)</div>
+              {[content.title, ...(content.titleAlts || [])].map((t, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ fontSize: 12, color: "#ccc", background: "#050505", border: "1px solid #1a0000", borderRadius: 4, padding: "8px 12px", flex: 1, fontFamily: "Arial" }}>{t}</div>
+                  <button onClick={() => navigator.clipboard.writeText(t)}
+                    style={{ background: "#1a0000", border: "1px solid #330000", borderRadius: 4, padding: "6px 10px", color: "#ff3333", fontSize: 10, cursor: "pointer", whiteSpace: "nowrap" }}>
+                    Copy
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Description */}
+            {content.description && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, color: "#ff3333", letterSpacing: 2 }}>📝 DESCRIPTION</div>
+                  <button onClick={() => navigator.clipboard.writeText(content.description)}
+                    style={{ background: "#1a0000", border: "1px solid #330000", borderRadius: 4, padding: "5px 10px", color: "#ff3333", fontSize: 10, cursor: "pointer" }}>
+                    Copy All
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, color: "#555", lineHeight: 1.9, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #1a0000", whiteSpace: "pre-wrap", fontFamily: "Arial" }}>
+                  {content.description}
+                </div>
+              </div>
+            )}
+
+            {/* Tags */}
+            {content.tags && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, color: "#ff3333", letterSpacing: 2 }}>🏷️ TAGS</div>
+                  <button onClick={() => navigator.clipboard.writeText(content.tags)}
+                    style={{ background: "#1a0000", border: "1px solid #330000", borderRadius: 4, padding: "5px 10px", color: "#ff3333", fontSize: 10, cursor: "pointer" }}>
+                    Copy All
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, color: "#555", lineHeight: 1.9, background: "#050505", borderRadius: 6, padding: 14, border: "1px solid #1a0000", fontFamily: "monospace" }}>
+                  {content.tags}
+                </div>
+              </div>
+            )}
+          </div>
+        </>)}
 
         {/* Image grid */}
         {images.length > 0 && (
