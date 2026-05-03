@@ -1,4 +1,4 @@
-// pages/api/script.js — OpenRouter (FREE, no billing needed)
+// pages/api/script.js — OpenRouter free models
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const { topic } = req.body;
@@ -18,34 +18,55 @@ Rules:
 
 Topic: ${topic}`;
 
-  try {
-    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
-        "HTTP-Referer": "https://mysterycase.vercel.app",
-        "X-Title": "MysteryCase Video Tool",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
-        messages: [{ role: "user", content: PROMPT }],
-        max_tokens: 1200,
-        temperature: 0.9,
-      }),
-    });
+  // Try multiple free models in order
+  const MODELS = [
+    "meta-llama/llama-4-maverick:free",
+    "meta-llama/llama-4-scout:free",
+    "deepseek/deepseek-chat-v3-0324:free",
+    "mistralai/mistral-7b-instruct:free",
+  ];
 
-    const data = await r.json();
-    if (!r.ok) return res.status(r.status).json({ error: data.error?.message || "OpenRouter error" });
+  let lastError = "";
+  for (const model of MODELS) {
+    try {
+      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
+          "HTTP-Referer": "https://mysterycase.vercel.app",
+          "X-Title": "MysteryCase Video Tool",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: PROMPT }],
+          max_tokens: 1200,
+          temperature: 0.9,
+        }),
+      });
 
-    const text = data.choices?.[0]?.message?.content || "";
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
-    if (!parsed.title || !parsed.script || !Array.isArray(parsed.imagePrompts)) {
-      return res.status(500).json({ error: "Invalid JSON from model" });
+      const data = await r.json();
+      if (!r.ok || data.error) {
+        lastError = data.error?.message || `Model ${model} failed`;
+        continue; // try next model
+      }
+
+      const text = data.choices?.[0]?.message?.content || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      // Extract JSON object from response
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (!match) { lastError = `No JSON from ${model}`; continue; }
+      const parsed = JSON.parse(match[0]);
+      if (!parsed.title || !parsed.script || !Array.isArray(parsed.imagePrompts)) {
+        lastError = `Invalid JSON structure from ${model}`; continue;
+      }
+      // Success
+      return res.status(200).json(parsed);
+    } catch (e) {
+      lastError = e.message;
+      continue;
     }
-    return res.status(200).json(parsed);
-  } catch (e) {
-    return res.status(500).json({ error: "Script error: " + e.message });
   }
+
+  return res.status(500).json({ error: "All models failed. Last error: " + lastError });
 }
