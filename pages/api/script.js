@@ -20,14 +20,15 @@ Create a complete horror short video package. Output ONLY valid JSON, no markdow
   ]
 }
 
-Rules for imagePrompts:
-- Each prompt starts with: "Draw a 2D cartoon horror illustration, vertical 9:16 format."
-- Keep ALL characters visually identical across all 10 images (same hair, clothes, face)
-- Each prompt describes ONE specific scene moment with: character positions, facial expressions, what they are doing, lighting, any horror element visible
-- Include a speech bubble with dialogue in at least 3 prompts
-- Horror element: shadow figure/entity should be subtle in early scenes, terrifying in later scenes
-- End with a final twist scene (child says something innocent that is actually terrifying)
-- Style always: "2D cartoon horror style, flat cell shading, thick black outlines, muted colors, 9:16"
+Rules for imagePrompts — FOLLOW EXACTLY:
+- Every prompt MUST start with: "Draw a 2D cartoon horror illustration, vertical 9:16 format."
+- Every prompt MUST end with: "2D cartoon horror style, flat shading, thick black outlines, 9:16."
+- Keep ALL characters visually identical across all 10 images — describe SAME hair color, clothing, face features every time
+- Each prompt = ONE specific cinematic moment: describe exact character position, facial expression, body language, what they hold, lighting direction, background details
+- At least 3 prompts include a speech bubble with exact dialogue text in quotes
+- Horror entity (shadow/figure/ghost) appears subtly in background of early scenes, dominates later scenes
+- Final prompt: twist scene — character says something innocent that recontextualizes the horror
+- Be SPECIFIC and DETAILED — bad example: "man looks scared in room" — good example: "Dark-haired man in grey t-shirt sits at kitchen table, hunched over glowing phone screen, face pale with terror, coffee gone cold beside him, clock on wall shows 3AM, shadows deep in corners"
 
 Story must be set in USA, sound like a real case, have a shocking twist.`;
 
