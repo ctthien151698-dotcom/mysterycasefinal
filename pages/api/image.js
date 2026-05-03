@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const { prompt, index } = req.body;
 
   // Prompt comes pre-formatted from script model, just enforce cartoon style
-  const fullPrompt = `${prompt} Draw in 2D cartoon illustration style: thick black outlines, flat cell shading, muted desaturated colors, large expressive character eyes, clean linework. NOT photorealistic. NOT anime. Vertical 9:16 portrait format.`;
+  const fullPrompt = `2D cartoon comic illustration style, similar to Kurzgesagt or Saturday morning cartoons but darker. Thick bold black outlines on everything. Flat color fills with minimal shading. Simple clean shapes. Characters have large round expressive eyes and exaggerated cartoon proportions. Muted cool color palette: gray-blue, dark green, pale skin tones. Horror elements present but drawn in cartoon style. Vertical 9:16 format. Scene: ${prompt}. Style reference: web comic illustration, flat design cartoon, NOT realistic, NOT semi-realistic, NOT detailed painterly, NOT anime, NOT manga, NOT 3D render. Must look like a cartoon comic panel.`;
 
   try {
     const r = await fetch(
